@@ -5,19 +5,40 @@ import Foundation
 import VLOAuthFlowCoordinator
 import VLNetworkingClient
 
-public final class VLDiscogsClient: ObservableObject {
-    var networkClient: NetworkClient
-    private static let usernameKey = "com.vldiscogs.cached_username"
-    @Published public var loggedIn: Bool = VLDiscogsClient.isUserLoggedIn()
+public actor VLDiscogsClient: ObservableObject {
+    let networkClient: NetworkClient
+    let userCache: Cache<UserIdentity>
+    
+    @Published public var loggedIn: Bool
     
     public init(
         oauthCallbackUrl: URL
-    ) {
-        networkClient = VLDiscogsClient.networkClient(callbackUrl: oauthCallbackUrl)
+    ) async {
+        await self.init(callbackUrl: oauthCallbackUrl)
     }
     
-    public init(deepLinkCallback: OAuthDeepLinkCallbackUrl) {
-        networkClient = VLDiscogsClient.networkClient(callbackUrl: deepLinkCallback.url)
+    public init(deepLinkCallback: OAuthDeepLinkCallbackUrl) async {
+        await self.init(callbackUrl: deepLinkCallback.url)
+    }
+    
+    private init(callbackUrl: URL) async {
+        let client = VLDiscogsClient.networkClient(callbackUrl: callbackUrl)
+        self.networkClient = client
+        let cache = UserCache(userIdentityProvider: Self.userIdentityProvider(from: client))
+        self.userCache = cache
+        
+        self.loggedIn = await cache.cached
+        await client.setUserCache(cache)
+    }
+    
+    static private func userIdentityProvider(from client: NetworkClient?) -> (() async throws -> UserIdentity) {
+        return {
+            guard let client else { throw NetworkError.noData }
+            let config = RequestConfiguration(url: DiscogsEndpoint.identity.url)
+            let response: NetworkResponse<UserIdentity> = try await client.default.request(for: config, with: JSONDecoder())
+            guard let identity = response.data else { throw NetworkError.noData }
+            return identity
+        }
     }
     
     static private func networkClient(callbackUrl: URL) -> NetworkClient {
@@ -34,10 +55,7 @@ public final class VLDiscogsClient: ObservableObject {
     }
     
     public func identity() async throws -> UserIdentity {
-        let config = RequestConfiguration(url: DiscogsEndpoint.identity.url)
-        let response: NetworkResponse<UserIdentity> = try await networkClient.default.request(for: config, with: JSONDecoder())
-        guard let identity = response.data else { throw NetworkError.noData }
-        return identity
+        try await userCache.get()
     }
     
     public func collectionFolders() async throws -> CollectionFolders {
@@ -47,33 +65,80 @@ public final class VLDiscogsClient: ObservableObject {
         guard let collectionFolders = response.data else { throw NetworkError.noData }
         return collectionFolders
     }
+    
+    public func folderPath() -> String {
+        DiscogsEndpoint.collectionFolders().url.relativePath
+    }
+    
+    public func folderRequest() async throws -> RequestConfiguration {
+        let username = try await getUsername()
+        return RequestConfiguration(url: DiscogsEndpoint.collectionFolders(username: username).url)
+    }
+    
+    public func response(for requestConfiguration: RequestConfiguration) async throws -> NetworkResponse<Data> {
+        try await networkClient.default.requestRawData(for: requestConfiguration)
+    }
+
+    public func collectionItemsByRelease(
+        releaseId: Int,
+        page: Int? = nil,
+        perPage: Int? = nil
+    ) async throws -> CollectionReleasesResponse {
+        let username = try await getUsername()
+        let config = RequestConfiguration(
+            url: DiscogsEndpoint.collectionItemsByRelease(
+                username: username,
+                releaseId: releaseId,
+                page: page,
+                perPage: perPage
+            ).url
+        )
+        let response: NetworkResponse<CollectionReleasesResponse> = try await networkClient.default.request(for: config, with: JSONDecoder())
+        guard let releases = response.data else { throw NetworkError.noData }
+        return releases
+    }
+    
+    public func collectionItemsByFolder(
+        folderId: Int,
+        page: Int? = nil,
+        perPage: Int? = nil,
+        sort: DiscogsEndpoint.SortParameterValue? = nil,
+        sortOrder: DiscogsEndpoint.SortOrderParameterValue? = nil
+    ) async throws -> CollectionReleasesResponse {
+        let username = try await getUsername()
+        
+        let config = RequestConfiguration(
+            url: DiscogsEndpoint.collectionItemsByFolder(
+                username: username,
+                folderId: folderId,
+                page: page,
+                perPage: perPage,
+                sort: sort,
+                sortOrder: sortOrder
+            ).url
+        )
+        let response: NetworkResponse<CollectionReleasesResponse> = try await networkClient.default.request(for: config, with: JSONDecoder())
+        guard let releases = response.data else { throw NetworkError.noData }
+        return releases
+    }
 
     public func getUsername() async throws -> String {
-        if let cached = UserDefaults.standard.string(forKey: VLDiscogsClient.usernameKey) {
-            return cached
-        }
-
-        let identity = try await identity()
-        UserDefaults.standard.set(identity.username, forKey: VLDiscogsClient.usernameKey)
-        loggedIn = true
-        return identity.username
+        let user = try await userCache.get()
+        loggedIn = await userCache.cached
+        return user.username
     }
 
-    public func clearCachedUsername() {
-        if let username = UserDefaults.standard.string(forKey: VLDiscogsClient.usernameKey) {
-            UserDefaults.standard.removeObject(forKey: VLDiscogsClient.usernameKey)
-            DiscogsLogger.default.debug("\(username) removed from cache")
-        }
+    public func clearCachedUsername() async throws {
+        await userCache.clear()
     }
     
-    public func logoutUser() async {
+    public func logoutUser() async throws {
         loggedIn = false
         await networkClient.clearToken()
-        clearCachedUsername()
     }
     
-    public static func isUserLoggedIn() -> Bool {
-        UserDefaults.standard.string(forKey: VLDiscogsClient.usernameKey) != nil
+    public func isUserLoggedIn() async -> Bool {
+        await userCache.cached
     }
 
     // MARK: - Database Endpoints
@@ -113,7 +178,7 @@ public final class VLDiscogsClient: ObservableObject {
     /// Search the Discogs database
     public func search(
         query: String,
-        type: SearchType? = nil,
+        type: DiscogsEndpoint.SearchType? = nil,
         page: Int? = nil,
         perPage: Int? = nil
     ) async throws -> SearchResults {

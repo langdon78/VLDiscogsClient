@@ -21,6 +21,6 @@ class OAuthTokenManager: @unchecked Sendable {
     }
     
     func refreshToken() async throws {
-        try await oauthFlowCoordinator.startOAuthFlow()
+        try await oauthFlowCoordinator.startOAuthFlow(prefersEphemeralWebBrowserSession: true)
     }
 }

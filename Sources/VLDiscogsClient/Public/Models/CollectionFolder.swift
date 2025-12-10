@@ -6,7 +6,7 @@
 //
 
 
-public struct CollectionFolder: Codable, Sendable {
+public struct CollectionFolder: Codable, Sendable, Identifiable, Hashable {
     public var id: Int
     public var count: Int
     public var name: String

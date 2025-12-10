@@ -6,13 +6,16 @@
 //
 import VLNetworkingClient
 import Foundation
+import AuthenticationServices
 
-final class OAuthInterceptor: Interceptor {
+actor OAuthInterceptor: Interceptor {
     
     private let tokenManager: OAuthTokenManager
+    var onTokenRefresh: (@Sendable () async -> Void)?
     
-    init(tokenManager: OAuthTokenManager) {
+    init(tokenManager: OAuthTokenManager, onTokenRefresh: (@Sendable () -> Void)? = nil) {
         self.tokenManager = tokenManager
+        self.onTokenRefresh = onTokenRefresh
     }
     
     func intercept(_ request: URLRequest) async throws -> URLRequest {
@@ -20,14 +23,35 @@ final class OAuthInterceptor: Interceptor {
         return signedRequest
     }
     
+    func setOnTokenRefresh(_ onTokenRefresh: (@Sendable () async -> Void)?) {
+        self.onTokenRefresh = onTokenRefresh
+    }
+    
     func intercept(_ response: URLResponse, data: Data?) async throws -> Data? {
-        // Handle 401 responses by refreshing token
-        if let httpResponse = response as? HTTPURLResponse,
-           httpResponse.statusCode == 401 {
-            try await tokenManager.refreshToken()
-            // Could throw a custom error to trigger request retry
-            throw InterceptorError.cancelled
+        // Handle 401 & 403 responses by refreshing token
+        if let httpResponse = response as? HTTPURLResponse {
+            switch httpResponse.statusCode {
+            case 401, 403:
+                try await refreshTokenAndRetry()
+            default:
+                return data
+            }
         }
         return data
+    }
+    
+    func refreshTokenAndRetry() async throws {
+        do {
+            await onTokenRefresh?()
+            try await tokenManager.refreshToken()
+            throw InterceptorError.shouldRetryRequest
+        } catch let sessionError as ASWebAuthenticationSessionError {
+            switch sessionError.code {
+            case .canceledLogin:
+                throw InterceptorError.cancelled
+            default:
+                throw InterceptorError.shouldRetryRequest
+            }
+        }
     }
 }
