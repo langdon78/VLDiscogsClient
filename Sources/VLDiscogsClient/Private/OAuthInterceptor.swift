@@ -11,11 +11,9 @@ import AuthenticationServices
 actor OAuthInterceptor: Interceptor {
     
     private let tokenManager: OAuthTokenManager
-    var onTokenRefresh: (@Sendable () async -> Void)?
     
-    init(tokenManager: OAuthTokenManager, onTokenRefresh: (@Sendable () -> Void)? = nil) {
+    init(tokenManager: OAuthTokenManager) {
         self.tokenManager = tokenManager
-        self.onTokenRefresh = onTokenRefresh
     }
     
     func intercept(_ request: URLRequest) async throws -> URLRequest {
@@ -23,16 +21,14 @@ actor OAuthInterceptor: Interceptor {
         return signedRequest
     }
     
-    func setOnTokenRefresh(_ onTokenRefresh: (@Sendable () async -> Void)?) {
-        self.onTokenRefresh = onTokenRefresh
-    }
-    
     func intercept(_ response: URLResponse, data: Data?) async throws -> Data? {
         // Handle 401 & 403 responses by refreshing token
         if let httpResponse = response as? HTTPURLResponse {
             switch httpResponse.statusCode {
-            case 401, 403:
+            case 401:
                 try await refreshTokenAndRetry()
+            case 403:
+                try await refreshToken()
             default:
                 return data
             }
@@ -40,10 +36,13 @@ actor OAuthInterceptor: Interceptor {
         return data
     }
     
+    func refreshToken() async throws {
+        try await tokenManager.refreshToken()
+    }
+    
     func refreshTokenAndRetry() async throws {
         do {
-            await onTokenRefresh?()
-            try await tokenManager.refreshToken()
+            try await refreshToken()
             throw InterceptorError.shouldRetryRequest
         } catch let sessionError as ASWebAuthenticationSessionError {
             switch sessionError.code {
