@@ -6,11 +6,13 @@
 //
 
 import Foundation
+import VLDebugLogger
 
 actor UserCache: Cache {
     
     private static let userKey = "com.vldiscogs.cached_user"
     private let userIdentityProvider: () async throws -> UserIdentity
+    private let logger: VLDebugLogger
     
     private var cachedUser: UserIdentity? {
         get {
@@ -23,7 +25,7 @@ actor UserCache: Cache {
                 let user = try JSONDecoder().decode(UserIdentity.self, from: cached)
                 return user
             } catch {
-                DiscogsLogger.default.log(error.localizedDescription)
+                logger.log(error.localizedDescription)
                 return nil
             }
         }
@@ -32,7 +34,7 @@ actor UserCache: Cache {
                 let encodedData = try JSONEncoder().encode(newValue)
                 UserDefaults.standard.set(encodedData, forKey: Self.userKey)
             } catch {
-                DiscogsLogger.default.log(error.localizedDescription)
+                logger.log(error.localizedDescription)
             }
         }
     }
@@ -41,8 +43,9 @@ actor UserCache: Cache {
         cachedUser != nil
     }
     
-    init(userIdentityProvider: @escaping () async throws -> UserIdentity) {
+    init(userIdentityProvider: @escaping () async throws -> UserIdentity, logger: VLDebugLogger) {
         self.userIdentityProvider = userIdentityProvider
+        self.logger = logger
     }
     
     func get() async throws -> UserIdentity {
@@ -57,7 +60,7 @@ actor UserCache: Cache {
     func clear() {
         if let user = cachedUser {
             UserDefaults.standard.removeObject(forKey: Self.userKey)
-            DiscogsLogger.default.debug("\(user.username) removed from cache")
+            logger.log("\(user.username) removed from cache")
         }
     }
 }

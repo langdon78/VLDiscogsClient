@@ -8,49 +8,54 @@
 import VLNetworkingClient
 import VLOAuthProvider
 import VLOAuthFlowCoordinator
+import VLDebugLogger
 
 actor NetworkClientManager: Sendable {
     var client: AsyncNetworkClientProtocol
     let tokenManager: OAuthTokenManager
-    let tokenStatusStream: AsyncStream<Bool>
+    let accountIdentifier: AccountIdentifier?
     
     init(
-        authConfiguration: AuthConfiguration
+        authConfiguration: AuthConfiguration,
+        accountIdentifier: AccountIdentifier? = nil
     ) {
+        self.accountIdentifier = accountIdentifier
+
         let unauthenticatedClient = AsyncNetworkClient(
             interceptorChain: InterceptorChain(
-                interceptors: [InterceptorFactory.make(configuration: .logging(logger: DiscogsLogger.default))]
+                interceptors: [InterceptorFactory.make(configuration: .logging())]
             )
         )
         
         let oauthFlowCoordinator = OAuthFlowCoordinator(
             authConfiguration: authConfiguration,
-            networkProvider: OAuthNetworkProvider(asyncNetworkClient: unauthenticatedClient)
+            networkProvider: OAuthNetworkProvider(asyncNetworkClient: unauthenticatedClient),
+            activeAccountKey: accountIdentifier?.storageKey,
+            logger: VLDebugLogger.shared
         )
         
         self.tokenManager = OAuthTokenManager(
             oauthFlowCoordinator: oauthFlowCoordinator
         )
         
-        self.tokenStatusStream = tokenManager.tokenStatusStream
-        
         let oauthInterceptor = OAuthInterceptor(tokenManager: tokenManager)
         
         self.client = AsyncNetworkClient(
             interceptorChain: InterceptorChain(
                 interceptors: [
-                    InterceptorFactory.make(configuration: .logging(logger: DiscogsLogger.default)),
+                    InterceptorFactory.make(configuration: .logging()),
                     oauthInterceptor
                 ]
             )
         )
     }
     
-    func clearToken() async {
-        await tokenManager.clearToken()
+    func clearTokens() async throws {
+        try await tokenManager.clearTokens()
     }
     
-    func setOnTokenRefresh(_ clearCache: @escaping (@Sendable () async -> Void)) async {
-        await tokenManager.setOnTokenRefresh(clearCache)
+    func copyAndClearTemporaryTokens() async throws {
+        try await tokenManager.copyAndClearTemporaryTokens()
     }
+
 }
