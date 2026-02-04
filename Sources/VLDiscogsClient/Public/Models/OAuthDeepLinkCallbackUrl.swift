@@ -18,7 +18,7 @@ public struct OAuthDeepLinkCallbackUrl {
         self.path = path
     }
     
-    var url: URL {
+    public var url: URL {
         var components = URLComponents()
         components.scheme = scheme
         components.host = host

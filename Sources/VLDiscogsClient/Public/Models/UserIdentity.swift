@@ -10,4 +10,11 @@ public struct UserIdentity: Codable, Sendable {
     public var username: String
     public var resource_url: String
     public var consumer_name: String
+    
+    public init(id: Int, username: String, resource_url: String, consumer_name: String) {
+        self.id = id
+        self.username = username
+        self.resource_url = resource_url
+        self.consumer_name = consumer_name
+    }
 }

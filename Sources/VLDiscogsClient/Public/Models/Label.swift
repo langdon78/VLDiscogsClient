@@ -8,7 +8,7 @@
 import Foundation
 
 /// Full label information from the Discogs database
-public struct Label: Codable, Sendable, Identifiable {
+public struct DiscogsLabel: Codable, Sendable, Identifiable {
     public let id: Int
     public let name: String
     public let resource_url: String

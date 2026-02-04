@@ -1,5 +1,5 @@
 {
-  "originHash" : "c40b85701292cc5be976a4040bce1efff665188bdbe39a439b3fb9afd44b422a",
+  "originHash" : "0b3a830240f84496b193b0f9bd8fec780779fffee1a9e4406931453dc18622bb",
   "pins" : [
     {
       "identity" : "swift-collections",
@@ -11,30 +11,12 @@
       }
     },
     {
-      "identity" : "vlnetworkingclient",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/langdon78/VLNetworkingClient",
-      "state" : {
-        "revision" : "f5a546cf0638d69cc7938808c777cea05ae4993f",
-        "version" : "0.1.5-alpha"
-      }
-    },
-    {
-      "identity" : "vloauthflowcoordinator",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/langdon78/VLOAuthFlowCoordinator",
-      "state" : {
-        "revision" : "f99a6a31ecf6b47b04105afc0839b4a3dc82352b",
-        "version" : "0.1.0-alpha"
-      }
-    },
-    {
       "identity" : "vloauthprovider",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/langdon78/VLOAuthProvider",
       "state" : {
-        "revision" : "886bbee3ccac74bac4ea96ce3e2f8e2439f039da",
-        "version" : "0.2.0-alpha"
+        "revision" : "d80e2dc90436b46b1d941a0d17976a66e97d586e",
+        "version" : "0.3.4-alpha"
       }
     }
   ],

@@ -10,16 +10,15 @@ import VLNetworkingClient
 
 public struct UserCollectionAPI: Sendable {
     let client: AsyncNetworkClientProtocol
-    let userCache: Cache<UserIdentity>
+    let accountIdentifier: String
     
-    init(client: AsyncNetworkClientProtocol, userCache: Cache<UserIdentity>) {
+    init(client: AsyncNetworkClientProtocol, accountIdentifier: String) {
         self.client = client
-        self.userCache = userCache
+        self.accountIdentifier = accountIdentifier
     }
     
     public func collectionFolders() async throws -> CollectionFolders {
-        let username = try await userCache.get().username
-        let config = RequestConfiguration(url: DiscogsEndpoint.collectionFolders(username: username).url)
+        let config = RequestConfiguration(url: DiscogsEndpoint.collectionFolders(username: accountIdentifier).url)
         let response: NetworkResponse<CollectionFolders> = try await client.request(for: config, with: JSONDecoder())
         guard let collectionFolders = response.data else { throw NetworkError.noData }
         return collectionFolders
@@ -30,8 +29,7 @@ public struct UserCollectionAPI: Sendable {
     }
     
     public func folderRequest() async throws -> RequestConfiguration {
-        let username = try await userCache.get().username
-        return RequestConfiguration(url: DiscogsEndpoint.collectionFolders(username: username).url)
+        return RequestConfiguration(url: DiscogsEndpoint.collectionFolders(username: accountIdentifier).url)
     }
     
     public func response(for requestConfiguration: RequestConfiguration) async throws -> NetworkResponse<Data> {
@@ -43,10 +41,9 @@ public struct UserCollectionAPI: Sendable {
         page: Int? = nil,
         perPage: Int? = nil
     ) async throws -> CollectionReleasesResponse {
-        let username = try await userCache.get().username
         let config = RequestConfiguration(
             url: DiscogsEndpoint.collectionItemsByRelease(
-                username: username,
+                username: accountIdentifier,
                 releaseId: releaseId,
                 page: page,
                 perPage: perPage
@@ -64,10 +61,9 @@ public struct UserCollectionAPI: Sendable {
         sort: DiscogsEndpoint.SortParameterValue? = nil,
         sortOrder: DiscogsEndpoint.SortOrderParameterValue? = nil
     ) async throws -> CollectionReleasesResponse {
-        let username = try await userCache.get().username
         let config = RequestConfiguration(
             url: DiscogsEndpoint.collectionItemsByFolder(
-                username: username,
+                username: accountIdentifier,
                 folderId: folderId,
                 page: page,
                 perPage: perPage,
