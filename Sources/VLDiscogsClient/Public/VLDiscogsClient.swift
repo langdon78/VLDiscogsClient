@@ -8,6 +8,7 @@ import VLNetworkingClient
 public actor VLDiscogsClient: ObservableObject {
     let networkClientManager: NetworkClientManager
     public let userCollectionApi: UserCollectionAPI
+    public let userIdentityApi: UserIdentityAPI
     public let accountIdentifier: AccountIdentifier?
     
     public init(
@@ -36,15 +37,14 @@ public actor VLDiscogsClient: ObservableObject {
             client: networkClientManager.client,
             accountIdentifier: accountIdentifier?.username ?? ""
         )
+        self.userIdentityApi = await UserIdentityAPI(client: networkClientManager.client)
     }
     
     static private func userIdentityProvider(from client: AsyncNetworkClientProtocol?) -> (() async throws -> UserIdentity) {
         return {
             guard let client else { throw NetworkError.noData }
             let config = RequestConfiguration(url: DiscogsEndpoint.identity.url)
-            let response: NetworkResponse<UserIdentity> = try await client.request(for: config, with: JSONDecoder())
-            guard let identity = response.data else { throw NetworkError.noData }
-            return identity
+            return try await client.request(for: config).decode(UserIdentity.self)
         }
     }
     
@@ -68,9 +68,7 @@ public actor VLDiscogsClient: ObservableObject {
     public func identity() async throws -> UserIdentity {
         let client = await networkClientManager.client
         let config = RequestConfiguration(url: DiscogsEndpoint.identity.url)
-        let response: NetworkResponse<UserIdentity> = try await client.request(for: config, with: JSONDecoder())
-        guard let identity = response.data else { throw NetworkError.noData }
-        return identity
+        return try await client.request(for: config).decode(UserIdentity.self)
     }
 
     public func clearTokens() async throws {
@@ -79,5 +77,28 @@ public actor VLDiscogsClient: ObservableObject {
     
     public func copyAndClearTemporaryTokens() async throws {
         try await networkClientManager.copyAndClearTemporaryTokens()
+    }
+    
+    public func request(
+        method: String,
+        path: String,
+        queryParameters: [URLQueryItem],
+        body: [String: Any]?
+    ) async throws -> NetworkResponse {
+        var url = URL(string: DiscogsOAuthProvider().apiHost)!
+        url.append(path: path)
+        if !queryParameters.isEmpty {
+            url.append(queryItems: queryParameters)
+        }
+        var bodyData: Data? = nil
+        if let body {
+            bodyData = try JSONSerialization.data(withJSONObject: body, options: [])
+        }
+        let requestConfig = RequestConfiguration(
+            url: url,
+            method: HTTPMethod(rawValue: method.uppercased()) ?? .GET,
+            body: bodyData
+        )
+        return try await networkClientManager.client.request(for: requestConfig)
     }
 }

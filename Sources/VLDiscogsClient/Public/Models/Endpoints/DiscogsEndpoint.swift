@@ -31,7 +31,14 @@ public enum DiscogsEndpoint {
     case collectionFolder(username: String, folderId: Int)
     case collectionItemsByRelease(username: String, releaseId: Int, page: Int? = nil, perPage: Int? = nil)
     case collectionItemsByFolder(username: String, folderId: Int, page: Int? = nil, perPage: Int? = nil, sort: SortParameterValue? = nil, sortOrder: SortOrderParameterValue? = nil)
+    case addReleaseToFolder(username: String, folderId: Int, releaseId: Int)
+    case editReleaseInstance(username: String, folderId: Int, releaseId: Int, instanceId: Int)
+    case collectionFields(username: String)
+    case collectionValue(username: String)
     case search(query: String, type: SearchType? = nil, page: Int? = nil, perPage: Int? = nil)
+    case userProfile(username: String)
+    case userSubmissions(username: String, page: Int? = nil, perPage: Int? = nil)
+    case userContributions(username: String, page: Int? = nil, perPage: Int? = nil, sort: String? = nil, sortOrder: String? = nil)
 
     private static let baseURL = "https://api.discogs.com"
 
@@ -104,6 +111,18 @@ public enum DiscogsEndpoint {
             }
             return components.url!
             
+        case .addReleaseToFolder(let username, let folderId, let releaseId):
+            urlString = "\(Self.baseURL)/\(Path.users)/\(username)/\(Path.collection)/\(Path.folders)/\(folderId)/\(Path.releases)/\(releaseId)"
+            
+        case .editReleaseInstance(let username, let folderId, let releaseId, let instanceId):
+            urlString = "\(Self.baseURL)/\(Path.users)/\(username)/\(Path.collection)/\(Path.folders)/\(folderId)/\(Path.releases)/\(releaseId)/instances/\(instanceId)"
+            
+        case .collectionFields(let username):
+            urlString = "\(Self.baseURL)/\(Path.users)/\(username)/\(Path.collection)/fields"
+            
+        case .collectionValue(let username):
+            urlString = "\(Self.baseURL)/\(Path.users)/\(username)/\(Path.collection)/value"
+        
         case .search(let query, let type, let page, let perPage):
             var components = URLComponents(string: "\(Self.baseURL)/database/search")!
             var queryItems: [URLQueryItem] = [
@@ -122,6 +141,47 @@ public enum DiscogsEndpoint {
 
             components.queryItems = queryItems
             return components.url!
+            
+        case .userProfile(let username):
+            urlString = "\(Self.baseURL)/\(Path.users)/\(username)"
+            
+        case .userSubmissions(let username, let page, let perPage):
+            var components = URLComponents(string: "\(Self.baseURL)/\(Path.users)/\(username)/submissions")!
+            var queryItems: [URLQueryItem] = []
+            
+            if let page = page {
+                queryItems.append(URLQueryItem(name: "page", value: "\(page)"))
+            }
+            if let perPage = perPage {
+                queryItems.append(URLQueryItem(name: "per_page", value: "\(perPage)"))
+            }
+            
+            if !queryItems.isEmpty {
+                components.queryItems = queryItems
+            }
+            return components.url!
+            
+        case .userContributions(let username, let page, let perPage, let sort, let sortOrder):
+            var components = URLComponents(string: "\(Self.baseURL)/\(Path.users)/\(username)/contributions")!
+            var queryItems: [URLQueryItem] = []
+            
+            if let page = page {
+                queryItems.append(URLQueryItem(name: "page", value: "\(page)"))
+            }
+            if let perPage = perPage {
+                queryItems.append(URLQueryItem(name: "per_page", value: "\(perPage)"))
+            }
+            if let sort = sort {
+                queryItems.append(URLQueryItem(name: "sort", value: sort))
+            }
+            if let sortOrder = sortOrder {
+                queryItems.append(URLQueryItem(name: "sort_order", value: sortOrder))
+            }
+            
+            if !queryItems.isEmpty {
+                components.queryItems = queryItems
+            }
+            return components.url!
         }
 
         return URL(string: urlString)!
@@ -131,7 +191,7 @@ public enum DiscogsEndpoint {
 public extension DiscogsEndpoint {
     
     /// Paths for Discogs API routes
-    public enum Path: String {
+    enum Path: String {
         case collection
         case users
         case folders
@@ -142,7 +202,7 @@ public extension DiscogsEndpoint {
     }
     
     /// Search types for Discogs database search
-    public enum SearchType: String {
+    enum SearchType: String {
         case release
         case master
         case artist
@@ -150,14 +210,14 @@ public extension DiscogsEndpoint {
     }
     
     /// Query parameters
-    public enum QueryParameterKey: String {
+    enum QueryParameterKey: String {
         case sort
         case sortOrder = "sort_order"
         case page
         case perPage = "per_page"
     }
     
-    public enum SortParameterValue: String {
+    enum SortParameterValue: String {
         case label
         case artist
         case title
@@ -168,7 +228,7 @@ public extension DiscogsEndpoint {
         case year
     }
     
-    public enum SortOrderParameterValue: String {
+    enum SortOrderParameterValue: String {
         case asc
         case desc
     }

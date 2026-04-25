@@ -13,8 +13,8 @@ public struct DiscogsCommunity: Codable, Sendable {
     public let rating: DiscogsRating?
     public let have: Int?
     public let want: Int?
-    public let submitter: DiscogsUser?
-    public let contributors: [DiscogsUser]?
+    public let submitter: DiscogsCommunityUser?
+    public let contributors: [DiscogsCommunityUser]?
     public let data_quality: String?
 
     public init(
@@ -22,8 +22,8 @@ public struct DiscogsCommunity: Codable, Sendable {
         rating: DiscogsRating? = nil,
         have: Int? = nil,
         want: Int? = nil,
-        submitter: DiscogsUser? = nil,
-        contributors: [DiscogsUser]? = nil,
+        submitter: DiscogsCommunityUser? = nil,
+        contributors: [DiscogsCommunityUser]? = nil,
         data_quality: String? = nil
     ) {
         self.status = status
@@ -48,7 +48,7 @@ public struct DiscogsRating: Codable, Sendable {
 }
 
 /// User reference
-public struct DiscogsUser: Codable, Sendable {
+public struct DiscogsCommunityUser: Codable, Sendable {
     public let username: String
     public let resource_url: String
 

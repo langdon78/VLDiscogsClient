@@ -21,9 +21,8 @@ class OAuthNetworkProvider: NetworkProvider {
             url: request.url!,
             headers: request.allHTTPHeaderFields ?? [:]
         )
-        let response: NetworkResponse<OAuthRequestToken> = try await asyncNetworkClient.request(for: requestConfiguration, with: RequestTokenResponseDecoder())
-        let requestToken = try await parseRequestTokenResponse(for: response)
-        return requestToken
+        let response: NetworkResponse = try await asyncNetworkClient.request(for: requestConfiguration)
+        return try response.decode(OAuthRequestToken.self, using: RequestTokenResponseDecoder())
     }
     
     func getAccessToken(from request: URLRequest) async throws -> VLOAuthFlowCoordinator.OAuthAccessToken? {
@@ -31,8 +30,8 @@ class OAuthNetworkProvider: NetworkProvider {
             url: request.url!,
             headers: request.allHTTPHeaderFields ?? [:]
         )
-        let response: NetworkResponse<OAuthAccessToken> = try await asyncNetworkClient.request(for: requestConfiguration, with: AccessTokenResponseDecoder())
-        return response.data
+        let response: NetworkResponse = try await asyncNetworkClient.request(for: requestConfiguration)
+        return try response.decode(OAuthAccessToken.self, using: AccessTokenResponseDecoder())
     }
     
     func decodeVerifierResponse(
@@ -40,10 +39,5 @@ class OAuthNetworkProvider: NetworkProvider {
     ) throws -> VLOAuthFlowCoordinator.OAuthVerifier? {
         let decoder = VerifierResponseDecoder()
         return try decoder.decode(OAuthVerifier.self, from: authorizationResponseQuery)
-    }
-    
-    private func parseRequestTokenResponse(for response: NetworkResponse<OAuthRequestToken>) async throws -> OAuthRequestToken {
-        guard let requestToken = try await response.data else { throw NetworkError.noData }
-        return requestToken
     }
 }
