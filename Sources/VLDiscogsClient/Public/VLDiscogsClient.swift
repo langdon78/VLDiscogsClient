@@ -9,6 +9,7 @@ public actor VLDiscogsClient: ObservableObject {
     let networkClientManager: NetworkClientManager
     public let userCollectionApi: UserCollectionAPI
     public let userIdentityApi: UserIdentityAPI
+    public let databaseApi: DatabaseAPI
     public let accountIdentifier: AccountIdentifier?
     
     public init(
@@ -38,6 +39,7 @@ public actor VLDiscogsClient: ObservableObject {
             accountIdentifier: accountIdentifier?.username ?? ""
         )
         self.userIdentityApi = await UserIdentityAPI(client: networkClientManager.client)
+        self.databaseApi = await DatabaseAPI(client: networkClientManager.client)
     }
     
     static private func userIdentityProvider(from client: AsyncNetworkClientProtocol?) -> (() async throws -> UserIdentity) {

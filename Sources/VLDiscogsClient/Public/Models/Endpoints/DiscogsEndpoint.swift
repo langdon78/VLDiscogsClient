@@ -39,6 +39,11 @@ public enum DiscogsEndpoint {
     case userProfile(username: String)
     case userSubmissions(username: String, page: Int? = nil, perPage: Int? = nil)
     case userContributions(username: String, page: Int? = nil, perPage: Int? = nil, sort: String? = nil, sortOrder: String? = nil)
+    case releaseRating(releaseId: Int, username: String)
+    case communityReleaseRating(releaseId: Int)
+    case masterVersions(masterId: Int, page: Int? = nil, perPage: Int? = nil)
+    case artistReleases(artistId: Int, page: Int? = nil, perPage: Int? = nil, sort: SortParameterValue? = nil, sortOrder: SortOrderParameterValue? = nil)
+    case labelReleases(labelId: Int, page: Int? = nil, perPage: Int? = nil, sort: SortParameterValue? = nil, sortOrder: SortOrderParameterValue? = nil)
 
     private static let baseURL = "https://api.discogs.com"
 
@@ -164,7 +169,7 @@ public enum DiscogsEndpoint {
         case .userContributions(let username, let page, let perPage, let sort, let sortOrder):
             var components = URLComponents(string: "\(Self.baseURL)/\(Path.users)/\(username)/contributions")!
             var queryItems: [URLQueryItem] = []
-            
+
             if let page = page {
                 queryItems.append(URLQueryItem(name: "page", value: "\(page)"))
             }
@@ -177,10 +182,44 @@ public enum DiscogsEndpoint {
             if let sortOrder = sortOrder {
                 queryItems.append(URLQueryItem(name: "sort_order", value: sortOrder))
             }
-            
+
             if !queryItems.isEmpty {
                 components.queryItems = queryItems
             }
+            return components.url!
+
+        case .releaseRating(let releaseId, let username):
+            urlString = "\(Self.baseURL)/\(Path.releases)/\(releaseId)/\(Path.rating)/\(username)"
+
+        case .communityReleaseRating(let releaseId):
+            urlString = "\(Self.baseURL)/\(Path.releases)/\(releaseId)/\(Path.rating)"
+
+        case .masterVersions(let masterId, let page, let perPage):
+            var components = URLComponents(string: "\(Self.baseURL)/\(Path.masters)/\(masterId)/\(Path.versions)")!
+            var queryItems: [URLQueryItem] = []
+            if let page { queryItems.append(URLQueryItem(name: "\(QueryParameterKey.page)", value: "\(page)")) }
+            if let perPage { queryItems.append(URLQueryItem(name: "\(QueryParameterKey.perPage)", value: "\(perPage)")) }
+            if !queryItems.isEmpty { components.queryItems = queryItems }
+            return components.url!
+
+        case .artistReleases(let artistId, let page, let perPage, let sort, let sortOrder):
+            var components = URLComponents(string: "\(Self.baseURL)/\(Path.artists)/\(artistId)/\(Path.releases)")!
+            var queryItems: [URLQueryItem] = []
+            if let page { queryItems.append(URLQueryItem(name: "\(QueryParameterKey.page)", value: "\(page)")) }
+            if let perPage { queryItems.append(URLQueryItem(name: "\(QueryParameterKey.perPage)", value: "\(perPage)")) }
+            if let sort { queryItems.append(URLQueryItem(name: "\(QueryParameterKey.sort)", value: "\(sort)")) }
+            if let sortOrder { queryItems.append(URLQueryItem(name: "\(QueryParameterKey.sortOrder)", value: "\(sortOrder)")) }
+            if !queryItems.isEmpty { components.queryItems = queryItems }
+            return components.url!
+
+        case .labelReleases(let labelId, let page, let perPage, let sort, let sortOrder):
+            var components = URLComponents(string: "\(Self.baseURL)/\(Path.labels)/\(labelId)/\(Path.releases)")!
+            var queryItems: [URLQueryItem] = []
+            if let page { queryItems.append(URLQueryItem(name: "\(QueryParameterKey.page)", value: "\(page)")) }
+            if let perPage { queryItems.append(URLQueryItem(name: "\(QueryParameterKey.perPage)", value: "\(perPage)")) }
+            if let sort { queryItems.append(URLQueryItem(name: "\(QueryParameterKey.sort)", value: "\(sort)")) }
+            if let sortOrder { queryItems.append(URLQueryItem(name: "\(QueryParameterKey.sortOrder)", value: "\(sortOrder)")) }
+            if !queryItems.isEmpty { components.queryItems = queryItems }
             return components.url!
         }
 
@@ -199,6 +238,8 @@ public extension DiscogsEndpoint {
         case masters
         case artists
         case labels
+        case rating
+        case versions
     }
     
     /// Search types for Discogs database search
