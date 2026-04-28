@@ -189,19 +189,6 @@ public struct UserCollectionAPI: Sendable {
         return try await client.request(for: config).decode(CollectionValue.self)
     }
 
-    // MARK: - Utility Methods
-
-    public func folderPath() -> String {
-        DiscogsEndpoint.collectionFolders().url.relativePath
-    }
-
-    public func folderRequest() async throws -> RequestConfiguration {
-        RequestConfiguration(url: DiscogsEndpoint.collectionFolders(username: accountIdentifier).url)
-    }
-
-    public func response(for requestConfiguration: RequestConfiguration) async throws -> NetworkResponse {
-        try await client.request(for: requestConfiguration)
-    }
 }
 
 // MARK: - Response Models

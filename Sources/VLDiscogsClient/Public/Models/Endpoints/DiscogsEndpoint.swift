@@ -7,18 +7,6 @@
 
 import Foundation
 
-struct Endpoints {
-    static let baseURL = "https://api.discogs.com"
-}
-
-extension Endpoints {
-    struct Reference {
-        // Placeholders
-        static let username = "{username}"
-        static let folderId = "{folder_id}"
-        static let releaseId = "{release_id}"
-    }
-}
 
 /// Discogs API endpoints
 public enum DiscogsEndpoint {

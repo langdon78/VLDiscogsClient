@@ -1,6 +1,3 @@
-// The Swift Programming Language
-// https://docs.swift.org/swift-book
-
 import Foundation
 import VLOAuthFlowCoordinator
 import VLNetworkingClient
@@ -50,14 +47,6 @@ public actor VLDiscogsClient: ObservableObject {
         self.wantlistApi = await WantlistAPI(client: networkClientManager.client)
         self.userListsApi = await UserListsAPI(client: networkClientManager.client)
         self.inventoryUploadApi = await InventoryUploadAPI(client: networkClientManager.client)
-    }
-    
-    static private func userIdentityProvider(from client: AsyncNetworkClientProtocol?) -> (() async throws -> UserIdentity) {
-        return {
-            guard let client else { throw NetworkError.noData }
-            let config = RequestConfiguration(url: DiscogsEndpoint.identity.url)
-            return try await client.request(for: config).decode(UserIdentity.self)
-        }
     }
     
     static private func networkClient(
