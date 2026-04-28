@@ -57,6 +57,8 @@ public enum DiscogsEndpoint {
     case inventoryExports(page: Int? = nil, perPage: Int? = nil)
     case inventoryExport(id: Int)
     case inventoryExportDownload(id: Int)
+    case wantlist(username: String, page: Int? = nil, perPage: Int? = nil)
+    case wantlistItem(username: String, releaseId: Int)
 
     private static let baseURL = "https://api.discogs.com"
 
@@ -304,6 +306,17 @@ public enum DiscogsEndpoint {
 
         case .inventoryExportDownload(let id):
             urlString = "\(Self.baseURL)/\(Path.inventory)/export/\(id)/download"
+
+        case .wantlist(let username, let page, let perPage):
+            var components = URLComponents(string: "\(Self.baseURL)/\(Path.users)/\(username)/\(Path.wants)")!
+            var queryItems: [URLQueryItem] = []
+            if let page { queryItems.append(URLQueryItem(name: "\(QueryParameterKey.page)", value: "\(page)")) }
+            if let perPage { queryItems.append(URLQueryItem(name: "\(QueryParameterKey.perPage)", value: "\(perPage)")) }
+            if !queryItems.isEmpty { components.queryItems = queryItems }
+            return components.url!
+
+        case .wantlistItem(let username, let releaseId):
+            urlString = "\(Self.baseURL)/\(Path.users)/\(username)/\(Path.wants)/\(releaseId)"
         }
 
         return URL(string: urlString)!
@@ -330,6 +343,7 @@ public extension DiscogsEndpoint {
         case fee
         case stats
         case inventory
+        case wants
     }
     
     /// Search types for Discogs database search
