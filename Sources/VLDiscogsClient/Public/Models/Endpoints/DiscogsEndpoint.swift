@@ -54,6 +54,9 @@ public enum DiscogsEndpoint {
     case marketplaceFeeWithCurrency(price: Double, currency: String)
     case marketplacePriceSuggestions(releaseId: Int)
     case marketplaceReleaseStatistics(releaseId: Int, currAbbr: String? = nil)
+    case inventoryExports(page: Int? = nil, perPage: Int? = nil)
+    case inventoryExport(id: Int)
+    case inventoryExportDownload(id: Int)
 
     private static let baseURL = "https://api.discogs.com"
 
@@ -287,6 +290,20 @@ public enum DiscogsEndpoint {
             var components = URLComponents(string: "\(Self.baseURL)/\(Path.marketplace)/\(Path.stats)/\(releaseId)")!
             if let currAbbr { components.queryItems = [URLQueryItem(name: "curr_abbr", value: currAbbr)] }
             return components.url!
+
+        case .inventoryExports(let page, let perPage):
+            var components = URLComponents(string: "\(Self.baseURL)/\(Path.inventory)/export")!
+            var queryItems: [URLQueryItem] = []
+            if let page { queryItems.append(URLQueryItem(name: "\(QueryParameterKey.page)", value: "\(page)")) }
+            if let perPage { queryItems.append(URLQueryItem(name: "\(QueryParameterKey.perPage)", value: "\(perPage)")) }
+            if !queryItems.isEmpty { components.queryItems = queryItems }
+            return components.url!
+
+        case .inventoryExport(let id):
+            urlString = "\(Self.baseURL)/\(Path.inventory)/export/\(id)"
+
+        case .inventoryExportDownload(let id):
+            urlString = "\(Self.baseURL)/\(Path.inventory)/export/\(id)/download"
         }
 
         return URL(string: urlString)!
