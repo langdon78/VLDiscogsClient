@@ -14,10 +14,10 @@ let package = Package(
         ),
     ],
     dependencies: [
-//        .package(url: "https://github.com/langdon78/VLNetworkingClient", .upToNextMajor(from: "0.1.5-alpha")),
-        .package(path: "../VLNetworkingClient"),
-//        .package(url: "https://github.com/langdon78/VLOAuthFlowCoordinator", .upToNextMajor(from: "0.1.0-alpha")),
-        .package(path: "../VLOAuthFlowCoordinator")
+        .package(url: "https://github.com/langdon78/VLNetworkingClient", .upToNextMajor(from: "0.1.5-alpha")),
+//        .package(path: "../VLNetworkingClient"),
+        .package(url: "https://github.com/langdon78/VLOAuthFlowCoordinator", .upToNextMajor(from: "0.1.0-alpha")),
+//        .package(path: "../VLOAuthFlowCoordinator")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
