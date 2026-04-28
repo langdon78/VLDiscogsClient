@@ -59,6 +59,11 @@ public enum DiscogsEndpoint {
     case inventoryExportDownload(id: Int)
     case wantlist(username: String, page: Int? = nil, perPage: Int? = nil)
     case wantlistItem(username: String, releaseId: Int)
+    case userLists(username: String, page: Int? = nil, perPage: Int? = nil)
+    case userList(listId: Int)
+    case inventoryUploads(page: Int? = nil, perPage: Int? = nil)
+    case inventoryUploadByType(type: InventoryUploadType)
+    case inventoryUploadById(id: Int)
 
     private static let baseURL = "https://api.discogs.com"
 
@@ -317,6 +322,31 @@ public enum DiscogsEndpoint {
 
         case .wantlistItem(let username, let releaseId):
             urlString = "\(Self.baseURL)/\(Path.users)/\(username)/\(Path.wants)/\(releaseId)"
+
+        case .userLists(let username, let page, let perPage):
+            var components = URLComponents(string: "\(Self.baseURL)/\(Path.users)/\(username)/\(Path.lists)")!
+            var queryItems: [URLQueryItem] = []
+            if let page { queryItems.append(URLQueryItem(name: "\(QueryParameterKey.page)", value: "\(page)")) }
+            if let perPage { queryItems.append(URLQueryItem(name: "\(QueryParameterKey.perPage)", value: "\(perPage)")) }
+            if !queryItems.isEmpty { components.queryItems = queryItems }
+            return components.url!
+
+        case .userList(let listId):
+            urlString = "\(Self.baseURL)/\(Path.lists)/\(listId)"
+
+        case .inventoryUploads(let page, let perPage):
+            var components = URLComponents(string: "\(Self.baseURL)/\(Path.inventory)/upload")!
+            var queryItems: [URLQueryItem] = []
+            if let page { queryItems.append(URLQueryItem(name: "\(QueryParameterKey.page)", value: "\(page)")) }
+            if let perPage { queryItems.append(URLQueryItem(name: "\(QueryParameterKey.perPage)", value: "\(perPage)")) }
+            if !queryItems.isEmpty { components.queryItems = queryItems }
+            return components.url!
+
+        case .inventoryUploadByType(let type):
+            urlString = "\(Self.baseURL)/\(Path.inventory)/upload/\(type.rawValue)"
+
+        case .inventoryUploadById(let id):
+            urlString = "\(Self.baseURL)/\(Path.inventory)/upload/\(id)"
         }
 
         return URL(string: urlString)!
@@ -344,6 +374,7 @@ public extension DiscogsEndpoint {
         case stats
         case inventory
         case wants
+        case lists
     }
     
     /// Search types for Discogs database search
@@ -431,5 +462,11 @@ public extension DiscogsEndpoint {
         case created
         case status
         case lastActivity = "last_activity"
+    }
+
+    enum InventoryUploadType: String {
+        case add
+        case change
+        case delete
     }
 }
