@@ -1,6 +1,15 @@
 {
-  "originHash" : "a0547aeffbccadb0cdc9e3df00d3de0ca6e8dd938439069119098270ef118ed9",
+  "originHash" : "a85a96190735bfa1f0e8502b9263cfd515a216d7f10f1f21fd844f43296ef0d6",
   "pins" : [
+    {
+      "identity" : "swift-asn1",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-asn1.git",
+      "state" : {
+        "revision" : "eb50cbd14606a9161cbc5d452f18797c90ef0bab",
+        "version" : "1.7.0"
+      }
+    },
     {
       "identity" : "swift-collections",
       "kind" : "remoteSourceControl",
@@ -11,30 +20,12 @@
       }
     },
     {
-      "identity" : "vldebuglogger",
+      "identity" : "swift-crypto",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/langdon78/VLDebugLogger",
+      "location" : "https://github.com/apple/swift-crypto.git",
       "state" : {
-        "revision" : "38676f86e9f6329c8932cf3f86c913974f3503c7",
-        "version" : "0.1.0"
-      }
-    },
-    {
-      "identity" : "vlnetworkingclient",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/langdon78/VLNetworkingClient",
-      "state" : {
-        "revision" : "73262a108a771030d0aa55d1e8b44a2d25d5ca1f",
-        "version" : "0.2.0"
-      }
-    },
-    {
-      "identity" : "vloauthflowcoordinator",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/langdon78/VLOAuthFlowCoordinator",
-      "state" : {
-        "revision" : "ffb6b6e435891ccd8adb5ce2771f201469355968",
-        "version" : "0.4.0"
+        "revision" : "95ba0316a9b733e92bb6b071255ff46263bbe7dc",
+        "version" : "3.15.1"
       }
     },
     {
@@ -42,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/langdon78/VLOAuthProvider",
       "state" : {
-        "revision" : "d80e2dc90436b46b1d941a0d17976a66e97d586e",
-        "version" : "0.3.4-alpha"
+        "revision" : "9038bd66fc3e4a7b6efed65809f7f5473601ec48",
+        "version" : "0.3.6-alpha"
       }
     }
   ],

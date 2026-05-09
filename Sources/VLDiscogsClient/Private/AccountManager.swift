@@ -6,12 +6,20 @@
 //
 
 import Foundation
+#if canImport(Combine)
+import Combine
+#endif
 
 /// Manages multiple Discogs accounts and switching between them
 @MainActor
-public class AccountManager: ObservableObject {
+public class AccountManager {
+    #if canImport(Combine)
     @Published public var accounts: [StoredAccount] = []
     @Published public var activeAccount: AccountIdentifier?
+    #else
+    public var accounts: [StoredAccount] = []
+    public var activeAccount: AccountIdentifier?
+    #endif
     
     private var discogsClients: [AccountIdentifier: VLDiscogsClient] = [:]
     private let callbackUrl: URL
@@ -154,6 +162,10 @@ public protocol AccountStore {
 }
 
 // MARK: - UserDefaults Implementation
+
+#if canImport(Combine)
+extension AccountManager: ObservableObject {}
+#endif
 
 public class UserDefaultsAccountStore: AccountStore {
     private let accountsKey = "discogs_stored_accounts"

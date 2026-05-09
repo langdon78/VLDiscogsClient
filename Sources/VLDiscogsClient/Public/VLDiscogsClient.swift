@@ -2,7 +2,7 @@ import Foundation
 import VLOAuthFlowCoordinator
 import VLNetworkingClient
 
-public actor VLDiscogsClient: ObservableObject {
+public actor VLDiscogsClient {
     let networkClientManager: NetworkClientManager
     public let userCollectionApi: UserCollectionAPI
     public let userIdentityApi: UserIdentityAPI

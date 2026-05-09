@@ -6,7 +6,12 @@
 //
 import VLNetworkingClient
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+#if canImport(AuthenticationServices)
 import AuthenticationServices
+#endif
 
 actor OAuthInterceptor: Interceptor {
     
@@ -44,13 +49,18 @@ actor OAuthInterceptor: Interceptor {
         do {
             try await refreshToken()
             throw InterceptorError.shouldRetryRequest
-        } catch let sessionError as ASWebAuthenticationSessionError {
-            switch sessionError.code {
-            case .canceledLogin:
-                throw InterceptorError.cancelled
-            default:
-                throw InterceptorError.shouldRetryRequest
+        } catch {
+#if canImport(AuthenticationServices)
+            if let sessionError = error as? ASWebAuthenticationSessionError {
+                switch sessionError.code {
+                case .canceledLogin:
+                    throw InterceptorError.cancelled
+                default:
+                    throw InterceptorError.shouldRetryRequest
+                }
             }
+#endif
+            throw error
         }
     }
 }
