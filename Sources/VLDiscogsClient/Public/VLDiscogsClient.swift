@@ -15,22 +15,43 @@ public actor VLDiscogsClient {
     public let accountIdentifier: AccountIdentifier?
     
     public init(
+        consumerKey: String,
+        consumerSecret: String,
         oauthCallbackUrl: URL,
         accountIdentifier: AccountIdentifier? = nil
     ) async throws {
-        try await self.init(callbackUrl: oauthCallbackUrl, accountIdentifier: accountIdentifier)
+        try await self.init(
+            consumerKey: consumerKey,
+            consumerSecret: consumerSecret,
+            callbackUrl: oauthCallbackUrl,
+            accountIdentifier: accountIdentifier
+        )
     }
-    
+
     public init(
+        consumerKey: String,
+        consumerSecret: String,
         deepLinkCallback: OAuthDeepLinkCallbackUrl,
         accountIdentifier: AccountIdentifier? = nil
     ) async throws {
-        try await self.init(callbackUrl: deepLinkCallback.url, accountIdentifier: accountIdentifier)
+        try await self.init(
+            consumerKey: consumerKey,
+            consumerSecret: consumerSecret,
+            callbackUrl: deepLinkCallback.url,
+            accountIdentifier: accountIdentifier
+        )
     }
-    
-    private init(callbackUrl: URL, accountIdentifier: AccountIdentifier?) async throws {
+
+    private init(
+        consumerKey: String,
+        consumerSecret: String,
+        callbackUrl: URL,
+        accountIdentifier: AccountIdentifier?
+    ) async throws {
         self.accountIdentifier = accountIdentifier
         let networkClientManager = VLDiscogsClient.networkClient(
+            consumerKey: consumerKey,
+            consumerSecret: consumerSecret,
             callbackUrl: callbackUrl,
             accountIdentifier: accountIdentifier
         )
@@ -50,14 +71,16 @@ public actor VLDiscogsClient {
     }
     
     static private func networkClient(
+        consumerKey: String,
+        consumerSecret: String,
         callbackUrl: URL,
         accountIdentifier: AccountIdentifier?
     ) -> NetworkClientManager {
         NetworkClientManager(
             authConfiguration: AuthConfiguration(
                 clientCredentials: ClientCredentials(
-                    key: DiscogsClientCredentials.default.key,
-                    secret: DiscogsClientCredentials.default.secret
+                    key: consumerKey,
+                    secret: consumerSecret
                 ),
                 provider: DiscogsOAuthProvider(),
                 callback: callbackUrl

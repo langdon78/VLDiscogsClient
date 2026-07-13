@@ -24,7 +24,9 @@ Then add `VLDiscogsClient` as a dependency of your target.
 
 ## Configuration
 
-Before using the client you need a Discogs application registered at [discogs.com/settings/developers](https://www.discogs.com/settings/developers). The app consumer key and secret are currently embedded in the library — replace the values in `DiscogsClientCredentials.swift` with your own before shipping.
+Before using the client you need a Discogs application registered at [discogs.com/settings/developers](https://www.discogs.com/settings/developers). The library does not store any consumer credentials — you must supply your app's consumer key and secret when constructing the client (see below).
+
+> **Note:** These credentials identify your *application*, not an end user, and cannot be kept truly secret inside a distributed binary. Keep them out of source control (e.g. an `.xcconfig` that's gitignored, or injected from your CI's secret store) and inject them into the client at runtime.
 
 ## Quick Start
 
@@ -35,6 +37,8 @@ import VLDiscogsClient
 
 // Using a deep link callback URL (recommended for iOS)
 let client = try await VLDiscogsClient(
+    consumerKey: myConsumerKey,
+    consumerSecret: myConsumerSecret,
     deepLinkCallback: OAuthDeepLinkCallbackUrl(
         scheme: "myapp",
         host: "discogs-callback"
@@ -43,6 +47,8 @@ let client = try await VLDiscogsClient(
 
 // Or with a full callback URL
 let client = try await VLDiscogsClient(
+    consumerKey: myConsumerKey,
+    consumerSecret: myConsumerSecret,
     oauthCallbackUrl: URL(string: "myapp://discogs-callback")!
 )
 ```
@@ -53,6 +59,8 @@ Pass an `AccountIdentifier` to scope stored OAuth tokens to a specific user. Thi
 
 ```swift
 let client = try await VLDiscogsClient(
+    consumerKey: myConsumerKey,
+    consumerSecret: myConsumerSecret,
     deepLinkCallback: OAuthDeepLinkCallbackUrl(scheme: "myapp", host: "discogs-callback"),
     accountIdentifier: AccountIdentifier(username: "vinylhead42")
 )

@@ -383,7 +383,8 @@ struct UserIdentityAPIErrorTests {
         
         await mockClient.reset()
         await mockClient.setRequestHandler { config in
-            return Optional<DiscogsUser>.none as Any
+            // Simulate an empty response body, which should decode to a NetworkError.
+            return nil
         }
         
         let api = UserIdentityAPI(client: mockClient)
