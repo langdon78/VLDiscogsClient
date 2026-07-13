@@ -22,10 +22,19 @@ public class AccountManager {
     #endif
     
     private var discogsClients: [AccountIdentifier: VLDiscogsClient] = [:]
+    private let consumerKey: String
+    private let consumerSecret: String
     private let callbackUrl: URL
     private let accountStore: AccountStore
-    
-    public init(callbackUrl: URL, accountStore: AccountStore = UserDefaultsAccountStore()) {
+
+    public init(
+        consumerKey: String,
+        consumerSecret: String,
+        callbackUrl: URL,
+        accountStore: AccountStore = UserDefaultsAccountStore()
+    ) {
+        self.consumerKey = consumerKey
+        self.consumerSecret = consumerSecret
         self.callbackUrl = callbackUrl
         self.accountStore = accountStore
         self.accounts = accountStore.loadAccounts()
@@ -50,6 +59,8 @@ public class AccountManager {
         // Create new client for this account
         do {
             let client = try await VLDiscogsClient(
+                consumerKey: consumerKey,
+                consumerSecret: consumerSecret,
                 oauthCallbackUrl: callbackUrl,
                 accountIdentifier: account
             )
@@ -122,7 +133,11 @@ public class AccountManager {
     /// Authenticate a new account
     public func authenticateNewAccount() async throws -> UserIdentity {
         // Create a temporary client without an account identifier
-        let tempClient = try await VLDiscogsClient(oauthCallbackUrl: callbackUrl)
+        let tempClient = try await VLDiscogsClient(
+            consumerKey: consumerKey,
+            consumerSecret: consumerSecret,
+            oauthCallbackUrl: callbackUrl
+        )
         // Clear any temporary access token to trigger reauthentication
         try await tempClient.clearTokens()
         // Get the user identity after OAuth completes
@@ -135,6 +150,8 @@ public class AccountManager {
         let identifier = AccountIdentifier(username: identity.username)
 
         let client = try await VLDiscogsClient(
+            consumerKey: consumerKey,
+            consumerSecret: consumerSecret,
             oauthCallbackUrl: callbackUrl,
             accountIdentifier: identifier
         )

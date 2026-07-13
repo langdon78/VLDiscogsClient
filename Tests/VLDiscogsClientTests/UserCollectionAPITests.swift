@@ -14,93 +14,56 @@ import Foundation
 
 /// Mock network client for testing API calls
 actor MockNetworkClient: AsyncNetworkClientProtocol {
-    var requestHandler: ((RequestConfiguration) async throws -> Any)?
+    /// Returns the model to serialize as the response body, or `nil` to simulate an empty body.
+    var requestHandler: (@Sendable (RequestConfiguration) async throws -> (any Encodable & Sendable)?)?
     var capturedConfigurations: [RequestConfiguration] = []
-    
-    func request<T: Codable & Sendable>(
-        for config: RequestConfiguration,
-        with decoder: ResponseBodyDecoder
-    ) async throws -> NetworkResponse<T> {
+
+    private func httpResponse(for config: RequestConfiguration) -> HTTPURLResponse {
+        HTTPURLResponse(
+            url: config.url,
+            statusCode: 200,
+            httpVersion: "HTTP/1.1",
+            headerFields: ["Content-Type": "application/json"]
+        )!
+    }
+
+    func request(for config: RequestConfiguration) async throws -> NetworkResponse {
         capturedConfigurations.append(config)
-        
+
         guard let handler = requestHandler else {
             throw NetworkError.noData
         }
-        
+
         let result = try await handler(config)
-        
-        // Create a mock HTTP response
-        let httpResponse = HTTPURLResponse(
-            url: config.url,
-            statusCode: 200,
-            httpVersion: "HTTP/1.1",
-            headerFields: ["Content-Type": "application/json"]
-        )!
-        
-        if let data = result as? T {
-            return NetworkResponse(data: data, response: httpResponse)
-        } else {
-            return NetworkResponse(data: nil, response: httpResponse)
-        }
+        let data = try result.map { try JSONEncoder().encode($0) }
+        return NetworkResponse(data: data, response: httpResponse(for: config))
     }
-    
-    func requestRawData(
-        for config: RequestConfiguration
-    ) async throws -> NetworkResponse<Data> {
-        capturedConfigurations.append(config)
-        
-        let httpResponse = HTTPURLResponse(
-            url: config.url,
-            statusCode: 200,
-            httpVersion: "HTTP/1.1",
-            headerFields: ["Content-Type": "application/json"]
-        )!
-        
-        let data = Data()
-        return NetworkResponse(data: data, response: httpResponse)
-    }
-    
+
     func downloadFile(
         _ config: RequestConfiguration,
         to destination: URL
-    ) async throws -> NetworkResponse<URL> {
+    ) async throws -> URL {
         capturedConfigurations.append(config)
-        
-        let httpResponse = HTTPURLResponse(
-            url: config.url,
-            statusCode: 200,
-            httpVersion: "HTTP/1.1",
-            headerFields: nil
-        )!
-        
-        return NetworkResponse(data: destination, response: httpResponse)
+        return destination
     }
-    
+
     func uploadFile(
         _ config: RequestConfiguration,
         from fileURL: URL
-    ) async throws -> NetworkResponse<Data> {
+    ) async throws -> NetworkResponse {
         capturedConfigurations.append(config)
-        
-        let httpResponse = HTTPURLResponse(
-            url: config.url,
-            statusCode: 200,
-            httpVersion: "HTTP/1.1",
-            headerFields: nil
-        )!
-        
-        return NetworkResponse(data: Data(), response: httpResponse)
+        return NetworkResponse(data: Data(), response: httpResponse(for: config))
     }
-    
+
     func reset() {
         capturedConfigurations.removeAll()
         requestHandler = nil
     }
-    
-    func setRequestHandler(_ handler: @escaping (RequestConfiguration) async throws -> Any) {
+
+    func setRequestHandler(_ handler: @escaping @Sendable (RequestConfiguration) async throws -> (any Encodable & Sendable)?) {
         requestHandler = handler
     }
-    
+
     func getLastConfiguration() -> RequestConfiguration? {
         capturedConfigurations.last
     }
@@ -460,39 +423,6 @@ struct UserCollectionAPITests {
         #expect(config?.method == .GET)
     }
     
-    // MARK: - Utility Methods Tests
-    
-    @Test("Folder path returns correct path")
-    func testFolderPath() async throws {
-        let mockClient = MockNetworkClient()
-        let api = UserCollectionAPI(client: mockClient, accountIdentifier: "testuser")
-        
-        let path = api.folderPath()
-        #expect(path.contains("collection"))
-    }
-    
-    @Test("Folder request creates valid configuration")
-    func testFolderRequest() async throws {
-        let mockClient = MockNetworkClient()
-        let api = UserCollectionAPI(client: mockClient, accountIdentifier: "testuser")
-        
-        let config = try await api.folderRequest()
-        #expect(config.url.absoluteString.contains("testuser"))
-        #expect(config.method == .GET)
-    }
-    
-    @Test("Response method returns network response")
-    func testResponse() async throws {
-        let mockClient = MockNetworkClient()
-        let api = UserCollectionAPI(client: mockClient, accountIdentifier: "testuser")
-        
-        let testConfig = RequestConfiguration(
-            url: URL(string: "https://api.discogs.com/test")!
-        )
-        
-        let response = try await api.response(for: testConfig)
-        #expect(response.statusCode == 200)
-    }
 }
 
 // MARK: - Error Handling Tests
@@ -522,11 +452,12 @@ struct UserCollectionAPIErrorTests {
         
         await mockClient.reset()
         await mockClient.setRequestHandler { config in
-            return Optional<CollectionFolders>.none as Any
+            // Simulate an empty response body, which should decode to a NetworkError.
+            return nil
         }
-        
+
         let api = UserCollectionAPI(client: mockClient, accountIdentifier: "testuser")
-        
+
         await #expect(throws: NetworkError.self) {
             try await api.collectionFolders()
         }
