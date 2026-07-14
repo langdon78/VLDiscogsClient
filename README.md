@@ -327,6 +327,29 @@ do {
 
 Discogs enforces a rate limit of 60 requests per minute for authenticated users. `VLNetworkingClient` includes automatic retry with exponential backoff for transient failures.
 
+## Rate Limiting
+
+`VLDiscogsClient` throttles authenticated requests to a fixed rate, configurable via `maxRequestsPerMinute` on init (default `50`, safely under Discogs's 60 req/min ceiling):
+
+```swift
+let client = try await VLDiscogsClient(
+    consumerKey: myConsumerKey,
+    consumerSecret: myConsumerSecret,
+    oauthCallbackUrl: URL(string: "myapp://discogs-callback")!,
+    maxRequestsPerMinute: 50
+)
+```
+
+This is a blind, fixed-rate floor — it doesn't know Discogs's actual real-time rate limit state. For that, check `rateLimitStatus`, which reflects the `X-Discogs-Ratelimit`/`-Used`/`-Remaining` headers from the most recently completed authenticated request:
+
+```swift
+if let status = await client.rateLimitStatus, status.remaining < 5 {
+    // back off further before the next sync batch
+}
+```
+
+`rateLimitStatus` is `nil` until the first authenticated request completes, and only updates on authenticated calls (not the OAuth token-exchange requests during sign-in).
+
 ## License
 
 MIT
