@@ -54,6 +54,12 @@ public struct BasicInformation: Codable, Sendable {
     public let artists: [CollectionArtist]
     public let labels: [CollectionLabel]
     public let formats: [ReleaseFormat]
+    /// Present on live Discogs API responses (confirmed 2026-07-14 against a
+    /// real collection release) but was missing from this model entirely —
+    /// Codable silently drops unmapped JSON keys, so this was previously
+    /// unrecoverable even though the API returned it.
+    public let genres: [String]?
+    public let styles: [String]?
 
     public init(
         id: Int,
@@ -63,7 +69,9 @@ public struct BasicInformation: Codable, Sendable {
         thumb: String,
         artists: [CollectionArtist],
         labels: [CollectionLabel],
-        formats: [ReleaseFormat]
+        formats: [ReleaseFormat],
+        genres: [String]? = nil,
+        styles: [String]? = nil
     ) {
         self.id = id
         self.title = title
@@ -73,6 +81,8 @@ public struct BasicInformation: Codable, Sendable {
         self.artists = artists
         self.labels = labels
         self.formats = formats
+        self.genres = genres
+        self.styles = styles
     }
 }
 
