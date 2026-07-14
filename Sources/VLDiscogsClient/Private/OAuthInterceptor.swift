@@ -1,6 +1,6 @@
 //
 //  OAuthInterceptor.swift
-//  VLOAuthFlowCoordinator
+//  VLDiscogsClient
 //
 //  Created by James Langdon on 8/26/25.
 //
