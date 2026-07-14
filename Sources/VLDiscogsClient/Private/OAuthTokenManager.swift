@@ -1,6 +1,6 @@
 //
 //  OAuthTokenManager.swift
-//  VLOAuthFlowCoordinator
+//  VLDiscogsClient
 //
 //  Created by James Langdon on 8/18/25.
 //

@@ -18,13 +18,15 @@ public actor VLDiscogsClient {
         consumerKey: String,
         consumerSecret: String,
         oauthCallbackUrl: URL,
-        accountIdentifier: AccountIdentifier? = nil
+        accountIdentifier: AccountIdentifier? = nil,
+        maxRequestsPerMinute: Int = 50
     ) async throws {
         try await self.init(
             consumerKey: consumerKey,
             consumerSecret: consumerSecret,
             callbackUrl: oauthCallbackUrl,
-            accountIdentifier: accountIdentifier
+            accountIdentifier: accountIdentifier,
+            maxRequestsPerMinute: maxRequestsPerMinute
         )
     }
 
@@ -32,13 +34,15 @@ public actor VLDiscogsClient {
         consumerKey: String,
         consumerSecret: String,
         deepLinkCallback: OAuthDeepLinkCallbackUrl,
-        accountIdentifier: AccountIdentifier? = nil
+        accountIdentifier: AccountIdentifier? = nil,
+        maxRequestsPerMinute: Int = 50
     ) async throws {
         try await self.init(
             consumerKey: consumerKey,
             consumerSecret: consumerSecret,
             callbackUrl: deepLinkCallback.url,
-            accountIdentifier: accountIdentifier
+            accountIdentifier: accountIdentifier,
+            maxRequestsPerMinute: maxRequestsPerMinute
         )
     }
 
@@ -46,14 +50,16 @@ public actor VLDiscogsClient {
         consumerKey: String,
         consumerSecret: String,
         callbackUrl: URL,
-        accountIdentifier: AccountIdentifier?
+        accountIdentifier: AccountIdentifier?,
+        maxRequestsPerMinute: Int
     ) async throws {
         self.accountIdentifier = accountIdentifier
         let networkClientManager = VLDiscogsClient.networkClient(
             consumerKey: consumerKey,
             consumerSecret: consumerSecret,
             callbackUrl: callbackUrl,
-            accountIdentifier: accountIdentifier
+            accountIdentifier: accountIdentifier,
+            maxRequestsPerMinute: maxRequestsPerMinute
         )
         self.networkClientManager = networkClientManager
 
@@ -74,7 +80,8 @@ public actor VLDiscogsClient {
         consumerKey: String,
         consumerSecret: String,
         callbackUrl: URL,
-        accountIdentifier: AccountIdentifier?
+        accountIdentifier: AccountIdentifier?,
+        maxRequestsPerMinute: Int
     ) -> NetworkClientManager {
         NetworkClientManager(
             authConfiguration: AuthConfiguration(
@@ -85,7 +92,8 @@ public actor VLDiscogsClient {
                 provider: DiscogsOAuthProvider(),
                 callback: callbackUrl
             ),
-            accountIdentifier: accountIdentifier
+            accountIdentifier: accountIdentifier,
+            maxRequestsPerMinute: maxRequestsPerMinute
         )
     }
     
@@ -102,7 +110,18 @@ public actor VLDiscogsClient {
     public func copyAndClearTemporaryTokens() async throws {
         try await networkClientManager.copyAndClearTemporaryTokens()
     }
-    
+
+    /// Discogs's server-reported rate limit state as of the most recent authenticated
+    /// response, or `nil` if no authenticated request has completed yet. Intended for a
+    /// caller to implement adaptive throttling on top of the client's own fixed-rate
+    /// throttle (`maxRequestsPerMinute` at init) — this client does not adapt on its own.
+    public var rateLimitStatus: DiscogsRateLimitStatus? {
+        get async {
+            await networkClientManager.rateLimitStatus
+        }
+    }
+
+
     public func request(
         method: String,
         path: String,
