@@ -17,7 +17,11 @@ public struct Release: Codable, Sendable, Identifiable {
     public let artists: [ArtistReference]
     public let artists_sort: String?
     public let labels: [LabelReference]
-    public let series: [String]?
+    /// `[DiscogsSeriesEntry]`, not `[String]` — Discogs sends this field as
+    /// either plain strings or label-shaped objects depending on the
+    /// release, and `DiscogsSeriesEntry` normalizes both (see its own doc
+    /// comment).
+    public let series: [DiscogsSeriesEntry]?
     public let companies: [Company]?
     public let formats: [Format]
     public let data_quality: String
@@ -55,7 +59,7 @@ public struct Release: Codable, Sendable, Identifiable {
         artists: [ArtistReference],
         artists_sort: String? = nil,
         labels: [LabelReference],
-        series: [String]? = nil,
+        series: [DiscogsSeriesEntry]? = nil,
         companies: [Company]? = nil,
         formats: [Format],
         data_quality: String,
