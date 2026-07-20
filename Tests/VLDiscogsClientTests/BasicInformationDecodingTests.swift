@@ -53,4 +53,45 @@ struct BasicInformationDecodingTests {
         #expect(decoded.genres == nil)
         #expect(decoded.styles == nil)
     }
+
+    @Test("Decodes cover_image when present in the response")
+    func testDecodesCoverImage() throws {
+        let json = """
+        {
+            "id": 2882977,
+            "title": "Slippery When Wet",
+            "year": 1986,
+            "resource_url": "https://api.discogs.com/releases/2882977",
+            "thumb": "https://example.com/thumb-150.jpg",
+            "cover_image": "https://example.com/cover-500.jpg",
+            "artists": [],
+            "labels": [],
+            "formats": []
+        }
+        """.data(using: .utf8)!
+
+        let decoded = try JSONDecoder().decode(BasicInformation.self, from: json)
+
+        #expect(decoded.cover_image == "https://example.com/cover-500.jpg")
+    }
+
+    @Test("Decodes to nil when cover_image is absent, rather than failing")
+    func testMissingCoverImageDecodesToNil() throws {
+        let json = """
+        {
+            "id": 7781525,
+            "title": "The BBC Radio Sessions",
+            "year": 2015,
+            "resource_url": "https://api.discogs.com/releases/7781525",
+            "thumb": "https://example.com/thumb-150.jpg",
+            "artists": [],
+            "labels": [],
+            "formats": []
+        }
+        """.data(using: .utf8)!
+
+        let decoded = try JSONDecoder().decode(BasicInformation.self, from: json)
+
+        #expect(decoded.cover_image == nil)
+    }
 }
