@@ -51,6 +51,12 @@ public struct BasicInformation: Codable, Sendable {
     public let year: Int
     public let resource_url: String
     public let thumb: String
+    /// The larger cover image Discogs returns alongside `thumb`'s fixed
+    /// 150×150 collection-list size — was entirely unmodeled before
+    /// (VIN-88 in the consuming VLOrganizer app), same "Codable silently
+    /// drops unmapped keys" gap as `genres`/`styles` below had. Optional
+    /// since it's unconfirmed whether every release response includes it.
+    public let cover_image: String?
     public let artists: [CollectionArtist]
     public let labels: [CollectionLabel]
     public let formats: [ReleaseFormat]
@@ -67,6 +73,7 @@ public struct BasicInformation: Codable, Sendable {
         year: Int,
         resource_url: String,
         thumb: String,
+        cover_image: String? = nil,
         artists: [CollectionArtist],
         labels: [CollectionLabel],
         formats: [ReleaseFormat],
@@ -78,6 +85,7 @@ public struct BasicInformation: Codable, Sendable {
         self.year = year
         self.resource_url = resource_url
         self.thumb = thumb
+        self.cover_image = cover_image
         self.artists = artists
         self.labels = labels
         self.formats = formats
