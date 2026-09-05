@@ -39,7 +39,7 @@ public struct Release: Codable, Sendable, Identifiable {
     public let notes: String?
     public let released_formatted: String?
     public let identifiers: [Identifier]?
-    public let videos: [DiscogsVideo]?
+    @LossyDecodableArray public var videos: [DiscogsVideo]?
     public let genres: [String]?
     public let styles: [String]?
     public let tracklist: [Track]

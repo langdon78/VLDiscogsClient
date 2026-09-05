@@ -28,7 +28,7 @@ public struct Master: Codable, Sendable, Identifiable {
     public let artists: [ArtistReference]
     public let title: String
     public let data_quality: String?
-    public let videos: [DiscogsVideo]?
+    @LossyDecodableArray public var videos: [DiscogsVideo]?
 
     public init(
         id: Int,
