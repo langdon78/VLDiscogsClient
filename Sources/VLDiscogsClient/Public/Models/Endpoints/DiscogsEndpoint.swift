@@ -374,14 +374,25 @@ public extension DiscogsEndpoint {
     }
     
     /// Query parameters
-    enum QueryParameterKey: String {
+    /// `CustomStringConvertible` returning `rawValue` is load-bearing, not
+    /// cosmetic: every endpoint case builds its query items via string
+    /// interpolation (`"\(QueryParameterKey.perPage)"`), and Swift's
+    /// default enum interpolation yields the CASE NAME, not the raw value
+    /// — so `perPage`/`sortOrder` were sent literally, Discogs ignored the
+    /// unknown keys, and pagination silently ran at the server default of
+    /// 50 (masked for as long as every consumer happened to request 50).
+    /// The conformance fixes all interpolation sites at once; do not
+    /// remove it in favor of "cleaner" direct interpolation.
+    enum QueryParameterKey: String, CustomStringConvertible {
         case sort
         case sortOrder = "sort_order"
         case page
         case perPage = "per_page"
+
+        public var description: String { rawValue }
     }
     
-    enum SortParameterValue: String {
+    enum SortParameterValue: String, CustomStringConvertible {
         case label
         case artist
         case title
@@ -390,11 +401,15 @@ public extension DiscogsEndpoint {
         case rating
         case added
         case year
+
+        public var description: String { rawValue }
     }
     
-    enum SortOrderParameterValue: String {
+    enum SortOrderParameterValue: String, CustomStringConvertible {
         case asc
         case desc
+
+        public var description: String { rawValue }
     }
 
     enum ListingStatus: String {
