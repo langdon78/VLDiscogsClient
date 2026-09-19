@@ -26,17 +26,25 @@ public class AccountManager {
     private let consumerSecret: String
     private let callbackUrl: URL
     private let accountStore: AccountStore
+    private let prefersEphemeralWebBrowserSession: Bool
 
+    /// - Parameter prefersEphemeralWebBrowserSession: applied to every
+    ///   client this manager creates. See `VLDiscogsClient.init` for what
+    ///   it costs; the default of `false` is what you want unless you are
+    ///   deliberately authorizing an account other than the one Safari is
+    ///   signed in to.
     public init(
         consumerKey: String,
         consumerSecret: String,
         callbackUrl: URL,
-        accountStore: AccountStore = UserDefaultsAccountStore()
+        accountStore: AccountStore = UserDefaultsAccountStore(),
+        prefersEphemeralWebBrowserSession: Bool = false
     ) {
         self.consumerKey = consumerKey
         self.consumerSecret = consumerSecret
         self.callbackUrl = callbackUrl
         self.accountStore = accountStore
+        self.prefersEphemeralWebBrowserSession = prefersEphemeralWebBrowserSession
         self.accounts = accountStore.loadAccounts()
         self.activeAccount = accountStore.loadActiveAccount()
     }
@@ -62,7 +70,8 @@ public class AccountManager {
                 consumerKey: consumerKey,
                 consumerSecret: consumerSecret,
                 oauthCallbackUrl: callbackUrl,
-                accountIdentifier: account
+                accountIdentifier: account,
+                prefersEphemeralWebBrowserSession: prefersEphemeralWebBrowserSession
             )
             discogsClients[account] = client
             return client
@@ -136,7 +145,8 @@ public class AccountManager {
         let tempClient = try await VLDiscogsClient(
             consumerKey: consumerKey,
             consumerSecret: consumerSecret,
-            oauthCallbackUrl: callbackUrl
+            oauthCallbackUrl: callbackUrl,
+            prefersEphemeralWebBrowserSession: prefersEphemeralWebBrowserSession
         )
         // Clear any temporary access token to trigger reauthentication
         try await tempClient.clearTokens()
@@ -153,7 +163,8 @@ public class AccountManager {
             consumerKey: consumerKey,
             consumerSecret: consumerSecret,
             oauthCallbackUrl: callbackUrl,
-            accountIdentifier: identifier
+            accountIdentifier: identifier,
+            prefersEphemeralWebBrowserSession: prefersEphemeralWebBrowserSession
         )
         try await client.copyAndClearTemporaryTokens()
         discogsClients[identifier] = client

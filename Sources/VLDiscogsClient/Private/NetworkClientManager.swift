@@ -29,7 +29,8 @@ actor NetworkClientManager: Sendable {
     init(
         authConfiguration: AuthConfiguration,
         accountIdentifier: AccountIdentifier? = nil,
-        maxRequestsPerMinute: Int = 50
+        maxRequestsPerMinute: Int = 50,
+        prefersEphemeralWebBrowserSession: Bool = false
     ) {
         self.accountIdentifier = accountIdentifier
 
@@ -50,7 +51,8 @@ actor NetworkClientManager: Sendable {
         )
 
         self.tokenManager = OAuthTokenManager(
-            oauthFlowCoordinator: oauthFlowCoordinator
+            oauthFlowCoordinator: oauthFlowCoordinator,
+            prefersEphemeralWebBrowserSession: prefersEphemeralWebBrowserSession
         )
 
         let oauthInterceptor = OAuthInterceptor(tokenManager: tokenManager)

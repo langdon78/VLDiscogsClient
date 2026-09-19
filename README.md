@@ -327,6 +327,35 @@ do {
 
 Discogs enforces a rate limit of 60 requests per minute for authenticated users. `VLNetworkingClient` includes automatic retry with exponential backoff for transient failures.
 
+## The authorization sheet and Safari's cookies
+
+OAuth opens Discogs's authorization page in an `ASWebAuthenticationSession`.
+By default that sheet **shares Safari's cookies**, so a user already signed in
+to Discogs gets a one-tap Authorize, and a cookie-consent banner they have
+already dismissed stays dismissed. iOS shows its standard "wants to use
+discogs.com to Sign In" alert in this mode, which is the trade.
+
+Pass `prefersEphemeralWebBrowserSession: true` when isolation is genuinely the
+point — authorizing an account other than the one the browser is signed in to,
+or a test harness that has to start from no session:
+
+```swift
+let client = try await VLDiscogsClient(
+    consumerKey: myConsumerKey,
+    consumerSecret: myConsumerSecret,
+    oauthCallbackUrl: URL(string: "myapp://discogs-callback")!,
+    prefersEphemeralWebBrowserSession: true
+)
+```
+
+Know what it costs before you do. An ephemeral session carries no cookies at
+all, so every authorization shows Discogs's consent banner *and* a full login
+form, and nothing the user does makes that stop. Versions through 0.5.1 forced
+this on with no way to opt out, which is how it was found.
+
+`AccountManager` takes the same parameter and applies it to every client it
+creates.
+
 ## Rate Limiting
 
 `VLDiscogsClient` throttles authenticated requests to a fixed rate, configurable via `maxRequestsPerMinute` on init (default `50`, safely under Discogs's 60 req/min ceiling):

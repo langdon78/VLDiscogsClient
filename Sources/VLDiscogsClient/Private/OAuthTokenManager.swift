@@ -16,9 +16,15 @@ import VLDebugLogger
 class OAuthTokenManager: @unchecked Sendable {
     var oauthFlowCoordinator: OAuthFlowCoordinator
     let logger: VLDebugLogger
-    
-    init(oauthFlowCoordinator: OAuthFlowCoordinator, logger: VLDebugLogger = VLDebugLogger.shared) {
+    let prefersEphemeralWebBrowserSession: Bool
+
+    init(
+        oauthFlowCoordinator: OAuthFlowCoordinator,
+        prefersEphemeralWebBrowserSession: Bool = false,
+        logger: VLDebugLogger = VLDebugLogger.shared
+    ) {
         self.oauthFlowCoordinator = oauthFlowCoordinator
+        self.prefersEphemeralWebBrowserSession = prefersEphemeralWebBrowserSession
         self.logger = logger
     }
     
@@ -27,7 +33,9 @@ class OAuthTokenManager: @unchecked Sendable {
     }
     
     func refreshToken() async throws {
-        try await oauthFlowCoordinator.startOAuthFlow(prefersEphemeralWebBrowserSession: true)
+        try await oauthFlowCoordinator.startOAuthFlow(
+            prefersEphemeralWebBrowserSession: prefersEphemeralWebBrowserSession
+        )
     }
     
     func clearTokens() async throws {
