@@ -16,6 +16,15 @@ import VLDebugLogger
 
 actor NetworkClientManager: Sendable {
     var client: AsyncNetworkClientProtocol
+    /// Signs like `client` but never auto-reauthenticates — see
+    /// `OAuthSigningInterceptor`. Used only by `verifyAuthentication()`,
+    /// so a caller can ask whether the stored token still works without
+    /// that question itself presenting a login sheet.
+    ///
+    /// Shares the session (and therefore the connection pool) with
+    /// `client`; it's the interceptor chain that differs, not the
+    /// transport.
+    var probeClient: AsyncNetworkClientProtocol
     let tokenManager: OAuthTokenManager
     let accountIdentifier: AccountIdentifier?
     private let rateLimitStatusInterceptor: RateLimitStatusInterceptor
@@ -69,6 +78,21 @@ actor NetworkClientManager: Sendable {
                     rateLimitStatusInterceptor,
                     InterceptorFactory.make(configuration: .logging()),
                     oauthInterceptor
+                ]
+            )
+        )
+
+        // Same throttle and the same rate-limit header capture — a probe
+        // is a real request and shouldn't escape either. Only the OAuth
+        // interceptor differs.
+        self.probeClient = AsyncNetworkClient(
+            session: session,
+            interceptorChain: InterceptorChain(
+                interceptors: [
+                    InterceptorFactory.make(configuration: .rateLimit(maxRequestsPerMinute: maxRequestsPerMinute)),
+                    rateLimitStatusInterceptor,
+                    InterceptorFactory.make(configuration: .logging()),
+                    OAuthSigningInterceptor(tokenManager: tokenManager)
                 ]
             )
         )

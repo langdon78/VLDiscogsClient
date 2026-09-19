@@ -26,6 +26,11 @@ import VLDebugLogger
 /// These tests exist to keep the default from quietly flipping back;
 /// a regression is invisible in code review and only shows up as a
 /// stranger's confusing first run.
+///
+/// The second half of the suite covers the other question about when a
+/// login sheet appears: `OAuthSigningInterceptor`, which exists so an
+/// app can ask "is my token still good?" without the asking itself
+/// prompting.
 @Suite("OAuth browser session isolation")
 struct OAuthBrowserSessionTests {
     /// Never used to make a request — the flow is never started here.
@@ -58,5 +63,45 @@ struct OAuthBrowserSessionTests {
             prefersEphemeralWebBrowserSession: true
         )
         #expect(manager.prefersEphemeralWebBrowserSession == true)
+    }
+
+    // MARK: - The silent probe
+
+    /// The contract `verifyAuthentication()` rests on. `OAuthInterceptor`
+    /// answers a 401 by opening a login sheet; this one has to hand the
+    /// 401 back untouched so the caller can decide what to do about it.
+    ///
+    /// A 401 is the case that matters — it's the one the other
+    /// interceptor treats as a trigger — but the hook is inert for every
+    /// status, which is what "signs, and otherwise stays out of the way"
+    /// means.
+    @Test("A 401 passes through the signing interceptor untouched")
+    func signingInterceptorDoesNotReactToAnUnauthorizedResponse() async throws {
+        let interceptor = OAuthSigningInterceptor(tokenManager: OAuthTokenManager(
+            oauthFlowCoordinator: makeCoordinator()
+        ))
+        let unauthorized = HTTPURLResponse(
+            url: URL(string: "https://api.discogs.com/oauth/identity")!,
+            statusCode: 401, httpVersion: nil, headerFields: nil
+        )!
+        let body = Data(#"{"message":"You must authenticate to access this resource."}"#.utf8)
+
+        let returned = try await interceptor.intercept(unauthorized, data: body)
+
+        #expect(returned == body)
+    }
+
+    @Test("A 200 passes through unchanged too")
+    func signingInterceptorLeavesSuccessAlone() async throws {
+        let interceptor = OAuthSigningInterceptor(tokenManager: OAuthTokenManager(
+            oauthFlowCoordinator: makeCoordinator()
+        ))
+        let ok = HTTPURLResponse(
+            url: URL(string: "https://api.discogs.com/oauth/identity")!,
+            statusCode: 200, httpVersion: nil, headerFields: nil
+        )!
+        let body = Data(#"{"username":"someone"}"#.utf8)
+
+        #expect(try await interceptor.intercept(ok, data: body) == body)
     }
 }

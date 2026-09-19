@@ -356,6 +356,35 @@ this on with no way to opt out, which is how it was found.
 `AccountManager` takes the same parameter and applies it to every client it
 creates.
 
+## Checking a token without prompting
+
+OAuth recovery is automatic: any authenticated request that meets a 401 re-triggers the
+OAuth flow and retries once it succeeds. That's the right default for a request the user
+asked for, and the wrong one for a *check* — an app verifying its stored token before a
+background sync shouldn't be able to throw a login sheet in the user's face as a side
+effect of asking.
+
+`verifyAuthentication()` is the same `/oauth/identity` call as `identity()`, signed the
+same way, but a failure comes back as a thrown error instead of a login sheet:
+
+```swift
+do {
+    let identity = try await client.verifyAuthentication()
+    // Token is good, and `identity.username` says who it belongs to.
+} catch {
+    // Token is dead. Offer reconnection when the user is ready for it,
+    // rather than interrupting whatever they were doing.
+}
+```
+
+Use `identity()` when recovery should just happen, and this when you need to know first.
+
+**Why `/oauth/identity` and not a collection endpoint:** it requires authentication
+outright, answering 401 with *"You must authenticate to access this resource"*. Collection
+endpoints don't — a **public** collection answers an unauthenticated request with 200 and
+silently omits the owner-only fields, so a revoked token can look like a perfectly
+successful sync with some data mysteriously missing.
+
 ## Rate Limiting
 
 `VLDiscogsClient` throttles authenticated requests to a fixed rate, configurable via `maxRequestsPerMinute` on init (default `50`, safely under Discogs's 60 req/min ceiling):

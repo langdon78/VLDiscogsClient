@@ -127,6 +127,32 @@ public actor VLDiscogsClient {
         return try await client.request(for: config).decode(UserIdentity.self)
     }
 
+    /// Whether the stored token still works — **without** presenting a
+    /// login sheet if it doesn't.
+    ///
+    /// Same endpoint as `identity()`, and on success the same answer, so
+    /// it doubles as "who am I actually authenticated as". The
+    /// difference is the failure: `identity()` routes through
+    /// `OAuthInterceptor`, which meets a 401 by opening an
+    /// `ASWebAuthenticationSession` immediately, whereas this throws.
+    ///
+    /// Use it when the app needs to *know* rather than to *recover* —
+    /// checking before a background sync, say, where a login sheet
+    /// appearing unbidden would be worse than the problem. Recovery is
+    /// then the app's to offer at a moment the user chose.
+    ///
+    /// `/oauth/identity` is the right probe because it requires auth
+    /// outright: it answers 401 with "You must authenticate to access
+    /// this resource" rather than degrading. Collection endpoints do
+    /// not — a public collection answers an unauthenticated request with
+    /// 200 and quietly drops the owner-only fields, which is how a
+    /// revoked token can look like a successful sync.
+    public func verifyAuthentication() async throws -> UserIdentity {
+        let client = await networkClientManager.probeClient
+        let config = RequestConfiguration(url: DiscogsEndpoint.identity.url)
+        return try await client.request(for: config).decode(UserIdentity.self)
+    }
+
     public func clearTokens() async throws {
         try await networkClientManager.clearTokens()
     }
