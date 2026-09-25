@@ -94,4 +94,27 @@ struct BasicInformationDecodingTests {
 
         #expect(decoded.cover_image == nil)
     }
+
+    @Test("Decodes a format's free text when present, nil when absent")
+    func testDecodesFormatText() throws {
+        let json = """
+        {
+            "id": 1,
+            "title": "Sugar",
+            "year": 1970,
+            "resource_url": "https://api.discogs.com/releases/1",
+            "thumb": "https://example.com/thumb.jpg",
+            "artists": [],
+            "labels": [],
+            "formats": [
+                {"name": "Vinyl", "qty": "1", "descriptions": ["LP", "Album"], "text": "Gatefold"},
+                {"name": "All Media", "qty": "1", "descriptions": ["Limited Edition"]}
+            ]
+        }
+        """.data(using: .utf8)!
+
+        let decoded = try JSONDecoder().decode(BasicInformation.self, from: json)
+
+        #expect(decoded.formats.map(\.text) == ["Gatefold", nil])
+    }
 }

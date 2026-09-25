@@ -154,14 +154,22 @@ public struct ReleaseFormat: Codable, Sendable {
     public let name: String
     public let qty: String
     public let descriptions: [String]
+    /// Discogs's free-text format note ("Gatefold", "180g, Clear",
+    /// "Pitman Pressing"). Optional: most entries don't carry one. The
+    /// release endpoint's `Format` already decoded it; the collection
+    /// endpoint sends it too, and dropping it here hid gatefold markings
+    /// from collection syncs.
+    public let text: String?
 
     public init(
         name: String,
         qty: String,
-        descriptions: [String]
+        descriptions: [String],
+        text: String? = nil
     ) {
         self.name = name
         self.qty = qty
         self.descriptions = descriptions
+        self.text = text
     }
 }
