@@ -354,7 +354,19 @@ form, and nothing the user does makes that stop. Versions through 0.5.1 forced
 this on with no way to opt out, which is how it was found.
 
 `AccountManager` takes the same parameter and applies it to every client it
-creates.
+creates. To isolate a single authorization, such as a "use a different
+account" button, pass it to that call instead and keep the shared default for
+everything else:
+
+```swift
+let identity = try await accountManager.authenticateNewAccount(
+    prefersEphemeralWebBrowserSession: true
+)
+```
+
+Only that authorization's sheet is isolated. The client stored for the new
+account keeps the manager's setting, so a later re-authorization shares
+Safari's cookies again.
 
 ## Checking a token without prompting
 

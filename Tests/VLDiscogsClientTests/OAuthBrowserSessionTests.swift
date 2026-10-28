@@ -65,6 +65,47 @@ struct OAuthBrowserSessionTests {
         #expect(manager.prefersEphemeralWebBrowserSession == true)
     }
 
+    // MARK: - One authorization in isolation
+
+    /// The case isolation is for: the user wants an account other than
+    /// the one Safari is signed in to. A shared session opens the sheet
+    /// as Safari's account, and deleting the app clears none of it, so an
+    /// app needs a way to ask for a blank login once without giving up
+    /// the shared default for everyone else.
+    @MainActor
+    private func makeAccountManager(prefersEphemeral: Bool) -> AccountManager {
+        AccountManager(
+            consumerKey: "key",
+            consumerSecret: "secret",
+            callbackUrl: URL(string: "vltest://callback")!,
+            accountStore: InMemoryAccountStore(),
+            prefersEphemeralWebBrowserSession: prefersEphemeral
+        )
+    }
+
+    private func sheetIsEphemeral(_ client: VLDiscogsClient) async -> Bool {
+        await client.networkClientManager.tokenManager.prefersEphemeralWebBrowserSession
+    }
+
+    @Test("Without an override, the authorization follows the manager's setting")
+    @MainActor
+    func authorizationFollowsTheManagerByDefault() async throws {
+        let shared = try await makeAccountManager(prefersEphemeral: false).makeAuthenticationClient()
+        let isolated = try await makeAccountManager(prefersEphemeral: true).makeAuthenticationClient()
+
+        #expect(await sheetIsEphemeral(shared) == false)
+        #expect(await sheetIsEphemeral(isolated) == true)
+    }
+
+    @Test("A per-call request for isolation wins over a shared manager")
+    @MainActor
+    func perCallIsolationOverridesTheManager() async throws {
+        let client = try await makeAccountManager(prefersEphemeral: false)
+            .makeAuthenticationClient(prefersEphemeralWebBrowserSession: true)
+
+        #expect(await sheetIsEphemeral(client) == true)
+    }
+
     // MARK: - The silent probe
 
     /// The contract `verifyAuthentication()` rests on. `OAuthInterceptor`
@@ -104,4 +145,16 @@ struct OAuthBrowserSessionTests {
 
         #expect(try await interceptor.intercept(ok, data: body) == body)
     }
+}
+
+/// Keeps `AccountManager` off `UserDefaults.standard` in tests.
+private final class InMemoryAccountStore: AccountStore {
+    private var accounts: [StoredAccount] = []
+    private var active: AccountIdentifier?
+
+    func loadAccounts() -> [StoredAccount] { accounts }
+    func saveAccounts(_ accounts: [StoredAccount]) { self.accounts = accounts }
+    func loadActiveAccount() -> AccountIdentifier? { active }
+    func saveActiveAccount(_ identifier: AccountIdentifier) { active = identifier }
+    func clearActiveAccount() { active = nil }
 }
