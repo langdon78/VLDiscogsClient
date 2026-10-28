@@ -39,6 +39,15 @@ class OAuthTokenManager: @unchecked Sendable {
     }
     
     func clearTokens() async throws {
+        // A client with no account signs with the anonymous slot, so that's
+        // the one to clear. Checking only the named slot made this a no-op
+        // for AccountManager.authenticateNewAccount's temporary client, and
+        // the Keychain outlives an app's deletion: a token left there by an
+        // earlier install was reused without ever showing the sheet.
+        guard oauthFlowCoordinator.activeAccountKey != nil else {
+            try await oauthFlowCoordinator.clearAnonymousTokens()
+            return
+        }
         if try await oauthFlowCoordinator.activeAccountHasValidTokens() {
             try await oauthFlowCoordinator.clearActiveTokens()
             logger.log("Removed Discogs user access token")

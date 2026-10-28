@@ -32,7 +32,8 @@ public class AccountManager {
     ///   client this manager creates. See `VLDiscogsClient.init` for what
     ///   it costs; the default of `false` is what you want unless you are
     ///   deliberately authorizing an account other than the one Safari is
-    ///   signed in to.
+    ///   signed in to. For that one authorization, prefer the per-call
+    ///   override on `authenticateNewAccount` to changing it here.
     public init(
         consumerKey: String,
         consumerSecret: String,
@@ -140,12 +141,17 @@ public class AccountManager {
     }
     
     /// Authenticate a new account
-    public func authenticateNewAccount() async throws -> UserIdentity {
-        // Create a temporary client without an account identifier
-        let tempClient = try await VLDiscogsClient(
-            consumerKey: consumerKey,
-            consumerSecret: consumerSecret,
-            oauthCallbackUrl: callbackUrl,
+    ///
+    /// - Parameter prefersEphemeralWebBrowserSession: overrides the
+    ///   manager's setting for this one authorization; nil keeps it. Pass
+    ///   `true` when the user wants an account other than the one Safari is
+    ///   signed in to, so the sheet opens on a blank login instead of that
+    ///   session. The client stored for the account keeps the manager's
+    ///   setting, so a later re-authorization shares Safari's cookies again.
+    public func authenticateNewAccount(
+        prefersEphemeralWebBrowserSession: Bool? = nil
+    ) async throws -> UserIdentity {
+        let tempClient = try await makeAuthenticationClient(
             prefersEphemeralWebBrowserSession: prefersEphemeralWebBrowserSession
         )
         // Clear any temporary access token to trigger reauthentication
@@ -164,12 +170,26 @@ public class AccountManager {
             consumerSecret: consumerSecret,
             oauthCallbackUrl: callbackUrl,
             accountIdentifier: identifier,
-            prefersEphemeralWebBrowserSession: prefersEphemeralWebBrowserSession
+            prefersEphemeralWebBrowserSession: self.prefersEphemeralWebBrowserSession
         )
         try await client.copyAndClearTemporaryTokens()
         discogsClients[identifier] = client
-        
+
         return identity
+    }
+
+    /// The temporary client an authorization runs on: no account
+    /// identifier, so it signs with the anonymous slot. Its 401 is what
+    /// opens the sheet, which is why the per-call preference lands here.
+    func makeAuthenticationClient(
+        prefersEphemeralWebBrowserSession override: Bool? = nil
+    ) async throws -> VLDiscogsClient {
+        try await VLDiscogsClient(
+            consumerKey: consumerKey,
+            consumerSecret: consumerSecret,
+            oauthCallbackUrl: callbackUrl,
+            prefersEphemeralWebBrowserSession: override ?? prefersEphemeralWebBrowserSession
+        )
     }
 }
 
