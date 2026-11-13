@@ -2,10 +2,12 @@
 
 A Swift 6 async/await client for the [Discogs API](https://www.discogs.com/developers/), built with full concurrency safety and OAuth 1.0a authentication.
 
+This is an unofficial client. It isn't affiliated with or endorsed by Discogs. Apps that use it must follow the Discogs API Terms of Use.
+
 ## Requirements
 
-- iOS 26+ / macOS (via Xcode workspace with local package dependencies)
-- Swift 6
+- iOS 26+ / macOS 26+
+- Swift 6.2+
 - Xcode 26+
 
 ## Installation
@@ -14,7 +16,7 @@ VLDiscogsClient is distributed as a Swift Package. Add it to your project via Xc
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/langdon78/VLDiscogsClient", .upToNextMajor(from: "1.0.0"))
+    .package(url: "https://github.com/langdon78/VLDiscogsClient", .upToNextMinor(from: "0.9.0"))
 ]
 ```
 
@@ -422,4 +424,4 @@ if let status = await client.rateLimitStatus, status.remaining < 5 {
 
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE).
